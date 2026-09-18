@@ -428,6 +428,15 @@ GitHub Actions run on push/PR to `master` and on release tags:
 
 ---
 
+## Authors
+
+Developed by [Sergiu Voicu](https://github.com/logimaxx), co-founder of [LogiMaxx Systems](https://logimaxx.ro).
+
+- Website: [dbapi.logimaxx.eu](https://dbapi.logimaxx.eu)
+- Contact: [sergiu@logimaxx.ro](mailto:sergiu@logimaxx.ro)
+
+---
+
 ## License
 
 Apache-2.0 — see [LICENSE.md](LICENSE.md).
