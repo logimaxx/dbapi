@@ -1,22 +1,23 @@
 # Tutorial 1 — Getting started
 
-In this tutorial you will run dbAPI locally, confirm it is healthy, and fetch your first records from the database.
+Run dbAPI locally, confirm it is healthy, and fetch your first records.
 
 **Time:** ~10 minutes  
-**Next:** [JSON:API basics](02-json-api-basics.md)
+**In a hurry?** Use the [5-minute API guide](../five_minute_api.md) instead.  
+**Next:** [Data plane](02-data-plane.md)
 
 ---
 
 ## What you are building toward
 
-dbAPI turns a MySQL or MariaDB schema into a [JSON:API](https://jsonapi.org/) REST layer. Your database tables become **resources**; foreign keys become **relationships**. There are two planes:
+dbAPI turns a MySQL or MariaDB schema into a [JSON:API](https://jsonapi.org/) REST layer. Tables become **resources**; foreign keys become **relationships**.
 
 | Plane | Who uses it | Example path |
 |-------|-------------|--------------|
 | **Data plane** | Your app, scripts, integrations | `/v1/data/customers` |
 | **Control plane** (Management API) | Operators, CI/CD | `/mgmt/v1/apis/default` |
 
-This tutorial focuses on the **data plane** — reading rows that already exist in the demo database.
+This tutorial focuses on the **data plane** — reading rows in the demo database.
 
 ---
 
@@ -28,143 +29,86 @@ From the repository root:
 docker compose up -d
 ```
 
-Wait until the dbAPI container is healthy, then confirm the liveness probe and open the service root:
+Wait until the container is healthy:
 
 ```bash
 curl -sS http://localhost:8888/health
 curl -sS http://localhost:8888/
 ```
 
-`/health` returns `{"status":"ok","service":"dbAPI"}`. The root URL returns JSON with path hints for management, data, auth, and swagger. The local stack runs in **single deployment mode**: one fixed API (`default`) auto-provisioned from environment variables.
+`/health` returns `{"status":"ok","service":"dbAPI"}`. The root URL returns path hints for management, data, auth, and swagger. The local stack runs in **single** mode: one API (`default`), auto-provisioned from `DB_*` env vars.
 
 ---
 
 ## Step 2 — Explore with Swagger UI
 
-Open the interactive API explorer in your browser:
-
 ```text
 http://localhost:8888/swagger.html?url=v1/swagger
 ```
 
-The OpenAPI spec is generated when the schema is built. Browse the **customers**, **orders**, **products**, and **order_lines** resources — these map directly to tables in the `myapp` database.
-
-To fetch the raw spec:
+Browse **customers**, **orders**, **products**, and **order_lines** — these map to tables in `myapp`.
 
 ```bash
 curl -sS http://localhost:8888/v1/swagger | jq '.paths | keys[:5]'
 ```
 
-**Tip:** Always check OpenAPI (or Swagger) before guessing field or relationship names. dbAPI derives names from your schema; they are not always obvious pluralizations.
+Always check OpenAPI before guessing field or relationship names.
 
 ---
 
-## Step 3 — List customers
+## Step 3 — List and fetch
 
 ```bash
 curl -sS 'http://localhost:8888/v1/data/customers?page[limit]=3' | jq .
-```
-
-A typical response:
-
-```json
-{
-  "data": [
-    {
-      "id": "1",
-      "type": "customers",
-      "attributes": {
-        "name": "Alice Example",
-        "email": "alice@example.com",
-        "country_code": "US",
-        "account_manager_id": 1,
-        "created_at": "..."
-      },
-      "relationships": {
-        "orders": { "data": [ { "id": "1", "type": "orders" }, ... ] },
-        "account_manager_id": { "data": { "id": "1", "type": "users" } }
-      }
-    }
-  ],
-  "meta": { "total": 3, "offset": 0 },
-  "included": []
-}
-```
-
-Key observations:
-
-- **`type`** matches the table name (`customers`).
-- **`id`** is the primary key as a string.
-- Column values live in **`attributes`**, not at the root of the object.
-- **`relationships`** lists linked records (foreign keys and child tables).
-- **`meta.total`** tells you how many rows match (before pagination).
-
----
-
-## Step 4 — Fetch one customer by id
-
-```bash
 curl -sS http://localhost:8888/v1/data/customers/1 | jq .
 ```
 
-The shape is the same, but `data` is a single object instead of an array.
+Key shape:
 
-If you request an id that does not exist, you get a JSON:API error:
+- **`type`** — table name
+- **`id`** — primary key as a string
+- **`attributes`** — column values
+- **`relationships`** — FK / child links
+- **`meta.total`** — matching row count (before pagination)
 
-```json
-{
-  "errors": [{ "status": "404", "title": "...", "detail": "..." }],
-  "meta": { "request_id": "..." }
-}
-```
+Missing id → JSON:API error with `errors[]` and usually **404**.
 
 ---
 
-## Step 5 — Request correlation
+## Step 4 — Request correlation
 
-Every response includes an **`X-Request-Id`** header. Send your own for log correlation:
+Every response includes **`X-Request-Id`**. Send your own for log correlation:
 
 ```bash
 curl -sS -H 'X-Request-Id: tutorial-01-demo' \
   http://localhost:8888/v1/data/customers/1 -D - -o /dev/null | grep -i x-request-id
 ```
 
-When something fails, include this id when asking for help or searching server logs.
-
 ---
 
-## Step 6 — Peek at the Management API (optional)
+## Step 5 — Peek at Management API (optional)
 
-Operators use the Management API to configure connection, schema, and policies. In single-mode Docker the API id is always **`default`**:
+In single-mode Docker the API id is always **`default`**:
 
 ```bash
 curl -sS http://localhost:8888/mgmt/v1/apis/default \
   -H 'X-Management-Key: myverysecuresecret' | jq '{ name, status, connection: .connection.configured }'
 ```
 
-You should see `"status": "active"`. If the data plane returned **409 API not active**, the API has not been activated yet — see [Tutorial 7](07-provisioning-an-api.md).
+You should see `"status": "active"`. If the data plane returns **409 API not active**, activate first — see [Operate](03-operate.md).
 
-**Do not** expose the management key in browser-side code. It belongs in server-side tooling and CI only.
+Do not expose the management key in browser-side code.
 
 ---
 
 ## What you learned
 
-- dbAPI exposes database tables as JSON:API resources at `/v1/data/{resource}`.
-- Responses separate **`attributes`** (columns) from **`relationships`** (foreign keys and children).
-- OpenAPI at `/v1/swagger` is the contract for field and relationship names.
-- The Management API (`/mgmt/v1/...`) configures whether the data plane is live.
-
----
-
-## Exercises
-
-1. List all **products** and note which ones have `is_active: 0`.
-2. Fetch customer id `2` and read the `orders` relationship identifiers without loading full order rows.
-3. Request a non-existent id (`/v1/data/customers/99999`) and inspect the error payload.
+- Tables are JSON:API resources at `/v1/data/{resource}`.
+- OpenAPI at `/v1/swagger` is the contract for names.
+- Management API configures whether the data plane is live.
 
 ---
 
 ## Next step
 
-[JSON:API basics](02-json-api-basics.md) — create, update, and delete records.
+[Data plane](02-data-plane.md) — filters, relationships, writes, bulk, and CSV.

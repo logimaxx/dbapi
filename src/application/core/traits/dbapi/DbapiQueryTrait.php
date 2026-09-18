@@ -57,10 +57,20 @@ trait DbapiQueryTrait
         }
 
         if(isset($inputs["page"])) {
-            if(isset($inputs["page"][$fqResName])) {
-                if(isset($inputs["page"][$fqResName]["offset"])) {
-                    if(is_numeric($inputs["page"][$fqResName]["offset"])) {
-                        $request->offset = ApiSafety::clampPageOffset((int) $inputs["page"][$fqResName]["offset"]);
+            $pageSpec = $inputs["page"][$fqResName] ?? null;
+            if (!is_array($pageSpec)) {
+                $slash = strrpos($fqResName, '/');
+                if ($slash !== false) {
+                    $simple = substr($fqResName, $slash + 1);
+                    if ($simple !== '' && isset($inputs["page"][$simple]) && is_array($inputs["page"][$simple])) {
+                        $pageSpec = $inputs["page"][$simple];
+                    }
+                }
+            }
+            if (is_array($pageSpec)) {
+                if(isset($pageSpec["offset"])) {
+                    if(is_numeric($pageSpec["offset"])) {
+                        $request->offset = ApiSafety::clampPageOffset((int) $pageSpec["offset"]);
                     } else {
                         throw new \dbAPI\API\Exception(
                             "Invalid page offset value for resource $request->resourceName",
@@ -68,10 +78,10 @@ trait DbapiQueryTrait
                         );
                     }
                 }
-                if(isset($inputs["page"][$fqResName]["limit"])) {
-                    if(is_numeric($inputs["page"][$fqResName]["limit"])) {
+                if(isset($pageSpec["limit"])) {
+                    if(is_numeric($pageSpec["limit"])) {
                         $request->limit = ApiSafety::clampPageLimit(
-                            (int) $inputs["page"][$fqResName]["limit"],
+                            (int) $pageSpec["limit"],
                             ApiSafety::limit('default_page_size')
                         );
                     } else {

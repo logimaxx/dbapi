@@ -1,18 +1,65 @@
 # dbAPI
 
-**Turn your MySQL or MariaDB schema into a production-grade [JSON:API](https://jsonapi.org/) REST layer** — without writing CRUD routes for every table.
+Turn a MySQL or MariaDB schema into a [JSON:API](https://jsonapi.org/) REST layer — without writing CRUD for every table.
 
-dbAPI introspects your database, generates configuration and OpenAPI, and serves governed HTTP access: filtering, relationships, field-level permissions, JWT auth, and lifecycle management. One installation can host many independent data APIs, each pointing at its own database.
+Introspect → configure policies → **activate**. Filtering, relationships, field-level ACLs, JWT auth, generated OpenAPI. One install can host many independent APIs (`apiId` per database).
 
-**Current release:** `1.0.1` · **Docker image:** [`ghcr.io/dbapiator/dbapi`](https://github.com/dbAPIator/dbapi/pkgs/container/dbapi)
+**Current release:** `1.5.0` · **License:** Apache-2.0 · **Image:** [`ghcr.io/dbapiator/dbapi`](https://github.com/dbAPIator/dbapi/pkgs/container/dbapi)
+
+---
+
+## Try it
+
+**Local (bundled MariaDB):**
+
+```bash
+git clone https://github.com/dbAPIator/dbapi.git
+cd dbapi && docker compose up -d
+curl -sS http://localhost:8888/health
+curl -sS 'http://localhost:8888/v1/data/customers?page[limit]=1'
+```
+
+**Against your own MySQL/MariaDB:**
+
+```bash
+docker run -d --name dbapi -p 8888:80 \
+  -e DEPLOYMENT_MODE=single \
+  -e CONFIGS_DIR=/app/apis \
+  -e CONFIG_API_SECRET='change-me' \
+  -e DB_HOST=mysql.example.com \
+  -e DB_NAME=myapp \
+  -e DB_USER=dbapi \
+  -e DB_PASSWORD='secret' \
+  -v dbapi-configs:/app/apis \
+  ghcr.io/dbapiator/dbapi:1.5.0
+```
+
+Example response:
+
+```http
+GET /v1/data/customers/42
+```
+
+```json
+{
+  "data": {
+    "type": "customers",
+    "id": "42",
+    "attributes": { "name": "Acme", "status": "active" },
+    "relationships": {
+      "orders": { "links": { "related": "/v1/data/customers/42/orders" } }
+    }
+  }
+}
+```
+
+More: [5-minute guide](docs/five_minute_api.md) · [Docker deployment](docs/docker_deployment.md) · [Tutorials](docs/tutorials/README.md)
 
 | Goal | Where to start |
 |------|----------------|
-| Run the published container | [Docker deployment guide](docs/docker_deployment.md) |
-| Develop locally | [Quick start — Docker](#docker) (`docker compose up -d`) |
-| Learn step by step | [Tutorials](docs/tutorials/README.md) — getting started through advanced topics |
-| Build a client app | [Using the API](docs/using_the_api.md) · [AI integration guide](docs/ai_dbapi_guide.md) |
-| Provision and operate APIs | [Management API](docs/management_api.md) |
+| Develop from source | [Quick start — Docker](#docker) |
+| Build a client | [Using the API](docs/using_the_api.md) · [AI guide](docs/ai_dbapi_guide.md) |
+| Provision / operate | [Management API](docs/management_api.md) |
 | Cut a release | [Releasing](docs/releasing.md) |
 
 ```text
@@ -48,6 +95,30 @@ dbAPI is for **teams that already build on MySQL or MariaDB** and need a governe
 **Less suited if you need:** a hosted Postgres platform with built-in auth and realtime (Supabase-style), GraphQL as the primary protocol, or a framework where all business logic stays in application code only.
 
 **Supported databases:** MySQL and MariaDB (mysqli). Other engines are not supported yet.
+
+### Compared to similar tools
+
+dbAPI sits in the same broad category as schema-driven HTTP layers (PostgREST, Hasura, Directus): expose a database without hand-writing CRUD. The differences that usually decide the choice:
+
+| | **dbAPI** | **PostgREST** | **Hasura** | **Directus** |
+|---|-----------|---------------|------------|--------------|
+| **Database** | MySQL / MariaDB | PostgreSQL | PostgreSQL (primary) | Many (incl. MySQL) |
+| **API style** | [JSON:API](https://jsonapi.org/) REST + OpenAPI | REST / RPC | GraphQL (+ REST options) | REST (+ GraphQL) |
+| **Control plane** | Management API: draft → validate → activate | Config / DB roles | Metadata + console | Admin app + API |
+| **Multi-API on one host** | First-class (`apiId` per DB) | Typically one schema service | One project / metadata set | One project |
+| **Field-level access** | Per-table / per-field ACLs | DB roles + grants | Permissions engine | Roles + permissions |
+| **Admin / CMS UI** | No (API + Swagger) | No | Console (dev/ops) | Yes (core product) |
+| **Best fit** | Governed MySQL JSON:API, ops lifecycle | Postgres-native auto-REST | Realtime GraphQL on Postgres | Content/ops UI over SQL |
+
+**Choose dbAPI when** you are on MySQL or MariaDB, want JSON:API clients and generated OpenAPI, and need several independent APIs (or draft/activate rollout) on one installation.
+
+**Choose PostgREST when** the database is PostgreSQL and you want a thin, battle-tested REST/RPC layer close to SQL and DB roles.
+
+**Choose Hasura when** GraphQL (and often realtime subscriptions) is the primary client contract on Postgres.
+
+**Choose Directus when** you need a full admin/CMS UI and a broader “data platform” experience, not only an HTTP data plane.
+
+These tools overlap; none is a strict superset. dbAPI is intentionally **not** a BaaS (hosted auth, realtime, managed DB) and **not** a low-code admin UI.
 
 ---
 
@@ -146,9 +217,10 @@ POST /v1/apis/{apiId}/data/customers
 
 - **IP ACLs** for data endpoints (and separate rules for management/config traffic).
 - **Path-based authorization** — restrict which URLs and HTTP methods callers may use.
-- **JWT authentication** — issue tokens after a configurable SQL login query against the same database; optional guest/read modes.
+- **JWT authentication** — issue tokens after a configurable SQL login query against the same database; optional guest/read modes; optional rotating **refresh tokens** (`POST .../auth/refresh`, `POST .../auth/logout`).
 - **Per-table and per-field ACLs** — control read, insert, update, delete, sort, and search per column.
 - **Inactive APIs return 409** — configuration can continue while data traffic is blocked.
+- **Liveness** — unauthenticated `GET /health` for orchestrators (Docker `HEALTHCHECK` uses it).
 
 ### Safety guardrails
 
@@ -199,7 +271,7 @@ POST ...:activate                     → data plane live
 
 - **Webhooks** — publish write events to Redis Streams for async dispatchers or downstream pipelines.
 - **Schema overrides** — rename resources, hide tables, tune relationship names without forking generated structure by hand.
-- **OpenAPI everywhere** — management spec at `src/public/management-openapi.yaml`; per-API spec generated on rebuild and served from disk (no regeneration per request).
+- **OpenAPI everywhere** — management specs at `src/public/management-openapi-multi.yaml` and `management-openapi-single.yaml` (served as `/management-openapi.yaml` for the active mode); per-API spec generated on rebuild and served from disk (no regeneration per request).
 - **Multi-API hosting** — dev, staging, and tenant-specific APIs as separate `apiId` directories under `dbconfigs/`.
 
 ---
@@ -210,36 +282,15 @@ POST ...:activate                     → data plane live
 
 #### Production (GHCR image)
 
-Pre-built images are published on each release tag to **GitHub Container Registry**:
-
-```text
-ghcr.io/dbapiator/dbapi
-```
+Same minimal `docker run` as in [Try it](#try-it). Full **`docker run`**, Compose stacks, environment variables, upgrades, and troubleshooting: **[Docker deployment guide](docs/docker_deployment.md)**.
 
 ```bash
-docker pull ghcr.io/dbapiator/dbapi:1.0.1
+docker pull ghcr.io/dbapiator/dbapi:1.5.0
 ```
-
-Minimal single-API run (external MySQL/MariaDB required):
-
-```bash
-docker run -d --name dbapi -p 8888:80 \
-  -e DEPLOYMENT_MODE=single \
-  -e CONFIGS_DIR=/app/apis \
-  -e CONFIG_API_SECRET='change-me' \
-  -e DB_HOST=mysql.example.com \
-  -e DB_NAME=myapp \
-  -e DB_USER=dbapi \
-  -e DB_PASSWORD='secret' \
-  -v dbapi-configs:/app/apis \
-  ghcr.io/dbapiator/dbapi:1.0.1
-```
-
-Full **`docker run`**, Compose stacks, environment variables, upgrades, and troubleshooting: **[Docker deployment guide](docs/docker_deployment.md)**.
 
 #### Local development (from source)
 
-Clone the repo and start the dev stack (live code mounts, bundled MariaDB, Redis, Adminer):
+Clone the repo and start the dev stack (live code mounts, bundled MariaDB):
 
 ```bash
 docker compose up -d
@@ -248,14 +299,18 @@ docker compose up -d
 | Service | URL |
 |---------|-----|
 | dbAPI | http://localhost:8888/ |
-| Adminer | http://localhost:8889/ |
-| MariaDB | `localhost:3306` (database `myapp`) |
+| MariaDB | `localhost:3308` (database `myapp`) |
+
+For optional webhooks (Redis Streams + dispatcher), use [`docker/base/`](docker/base/).
 
 Local Compose uses **single deployment mode** (`DEPLOYMENT_MODE=single`). On first start the container waits for MySQL, auto-provisions the `default` API from `DB_*` environment variables, and serves data at `/v1/data/...`.
 
 MariaDB is seeded with the full data-plane test schema on **first** database init (`docker/mysql-init/`). To re-run the seed, remove the MySQL data volume first: `rm -rf .docker_data/mysql && docker compose up -d`.
 
 ```bash
+# Liveness
+curl -sS http://localhost:8888/health
+
 # Service discovery
 curl -sS http://localhost:8888/
 
@@ -337,9 +392,9 @@ cd src && ./vendor/bin/phpunit tests/TestSingleModeDataPlaneAPI.php
 
 | Suite | Focus |
 |-------|--------|
-| `composer test:unit` | Filter parser, OpenAPI, schema sync checks (~14 tests) |
+| `composer test:unit` | Filter parser, OpenAPI, schema sync, health, helpers (~69 tests) |
 | `TestManagementAPI` | Control plane lifecycle |
-| `TestDataPlaneAPI` | Full data-plane coverage (multi-API, ~55 tests) |
+| `TestDataPlaneAPI` | Full data-plane coverage (multi-API, ~75 tests) |
 | `TestSingleModeDataPlaneAPI` | Same scenarios via Docker `/v1/data/...` |
 
 Details: [management_api_test_plan.md](docs/management_api_test_plan.md) · [data_plane_test_plan.md](docs/data_plane_test_plan.md)
@@ -362,16 +417,17 @@ GitHub Actions run on push/PR to `master` and on release tags:
 
 ## Documentation
 
-- [Tutorials](docs/tutorials/README.md) — hands-on learning path (beginner → advanced)
-- [Docker deployment guide](docs/docker_deployment.md) — GHCR image, `docker run`, Compose, env vars
+- [5-minute API guide](docs/five_minute_api.md) — compose up, list, filter, create (also on [dbapi.logimaxx.eu/guide.html](https://dbapi.logimaxx.eu/guide.html))
+- [Tutorials](docs/tutorials/README.md) — hands-on path (getting started → data plane → operate)
+- [Docker deployment guide](docs/docker_deployment.md) — GHCR image, `docker run`, Compose, env vars (also on [dbapi.logimaxx.eu/deploy.html](https://dbapi.logimaxx.eu/deploy.html))
 - [Management API](docs/management_api.md) — control plane reference
 - [Using the API](docs/using_the_api.md) — filters, pagination, relationships, writes
 - [AI integration guide](docs/ai_dbapi_guide.md) — copy into consumer projects for Cursor / agents
 - [OpenAPI pipeline](docs/openapi_pipeline.md) — how specs are generated and validated
-- [Releasing](docs/releasing.md) — version tags, changelog, Docker publish
+- [Changelog](CHANGELOG.md) · [Releasing](docs/releasing.md) — version history, tags, Docker publish
 
 ---
 
 ## License
 
-MIT — see [LICENSE.md](LICENSE.md).
+Apache-2.0 — see [LICENSE.md](LICENSE.md).

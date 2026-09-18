@@ -1,6 +1,6 @@
 #!/bin/bash
 # Admin API full test script – happy path + selected error scenarios
-# Based on docs/admin_api_test_plan.md
+# Based on docs/management_api_test_plan.md
 # DB connection (valid): host 192.168.8.114, user vsergiu, pass parola123, database test
 
 set -e
@@ -202,4 +202,4 @@ if [ "$CODE" != "204" ] && [ "$CODE" != "409" ]; then echo "Expected 204 or 409,
 log "OK – delete $CODE"
 echo ""
 
-log "All scenarios completed. See docs/admin_api_test_plan.md for full scenario list."
+log "All scenarios completed. See docs/management_api_test_plan.md for full scenario list."

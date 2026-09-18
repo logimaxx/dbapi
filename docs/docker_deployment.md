@@ -2,7 +2,7 @@
 
 Use the published dbAPI container image to run dbAPI without cloning the repository or building PHP locally. Images are built from the root [`Dockerfile`](../Dockerfile) and published to **GitHub Container Registry (GHCR)** on each release tag.
 
-For local development with live code mounts and a bundled MariaDB/Redis stack, use [`docker-compose.yml`](../docker-compose.yml) in the repository instead.
+For local development with live code mounts and a bundled MariaDB stack, use [`docker-compose.yml`](../docker-compose.yml) in the repository instead.
 
 For **consumer projects** (your app + database, published dbAPI image), copy [`docker/base/`](../docker/base/) into your repo, set `.env` from `.env.example`, add schema SQL under `mysql-init/`, and run `docker compose up -d`.
 
@@ -306,6 +306,7 @@ docker logs -f dbapi
 
 ## Related documentation
 
+- Website: [Guide — get started & deploy](https://dbapi.logimaxx.eu/guide.html)
 - [README — Quick start](../README.md#quick-start)
 - [Management API](management_api.md) — control plane
 - [Using the API](using_the_api.md) — data plane (filters, relationships, writes)

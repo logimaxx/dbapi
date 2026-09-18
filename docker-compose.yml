@@ -2,6 +2,7 @@
 #
 # Requires PHP 8.3 (see Dockerfile). App: http://localhost:8888
 # Run PHPUnit on PHP 8.3: bash scripts/run-phpunit-docker.sh
+# Webhooks/Redis: use docker/base/ (optional; not needed for the data plane).
 
 services:
   dbapi:
@@ -15,7 +16,6 @@ services:
       - ./dbconfigs:/app/apis
     depends_on:
       - mysql
-      - redis
     environment:
       - BASE_URL=http://localhost:8888
       - DEPLOYMENT_MODE=single
@@ -24,11 +24,6 @@ services:
       - DB_NAME=myapp
       - DB_USER=user
       - DB_PASSWORD=password
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_STREAM=dbapi_webhooks
-      - REDIS_GROUP=dbapi_webhooks_group
-      # - REDIS_PASSWORD=password
       - CONFIGS_DIR=/app/apis
       - DEFAULT_RELATIONSHIPS_PAGE_SIZE=10
       - DEFAULT_PAGE_SIZE=100
@@ -61,11 +56,3 @@ services:
   #     - ADMINER_DEFAULT_PASSWORD=rootpassword
   #   depends_on:
   #     - mysql
-
-  redis:
-    image: redis:6
-    ports:
-      - "6379:6379"
-    volumes:
-      - ./.docker_data/redis:/data
-

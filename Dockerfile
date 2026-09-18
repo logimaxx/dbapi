@@ -6,6 +6,7 @@ RUN apt-get update \
     && apt-get install -y software-properties-common curl unzip \
     && add-apt-repository ppa:ondrej/php -y \
     && apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y \
         nginx \
         supervisor \

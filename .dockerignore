@@ -8,3 +8,6 @@ src/apis
 src/vendor
 src/tests
 **/.phpunit.result.cache
+docs/planning
+consumer.log
+seafile-ignore.txt

@@ -223,7 +223,7 @@ curl --location 'https://localhost/dbapi/apis/api_name/data/vendors' \
 }'  
 ```
 
-You can also create records from a CSV body on the same endpoint (`Content-Type: text/csv`, or `multipart/form-data` with a `file`/`csv` field). The header row must use insertable attribute names; behaviour matches JSON bulk create (transaction + `BULK_INSERT_LIMIT` + `onduplicate`). See [Tutorial 5 — CSV import](tutorials/05-writing-data.md#csv-import).
+You can also create records from a CSV body on the same endpoint (`Content-Type: text/csv`, or `multipart/form-data` with a `file`/`csv` field). The header row must use insertable attribute names; behaviour matches JSON bulk create (transaction + `BULK_INSERT_LIMIT` + `onduplicate`). See [Tutorial 2 — CSV import](tutorials/02-data-plane.md#csv-export-and-import).
 
 In the same POST request you can include the relationships to be created. For example, to create a new vendor with an order, you can use the following request:
 ```shell
