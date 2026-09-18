@@ -94,6 +94,11 @@ All notable changes to dbAPI are documented here. Version numbers follow [Semant
 - dbAuth refresh tokens: optional `refresh_validity` issues an opaque rotating `refresh_token` (hashed in `dbapi_refresh_tokens`, skipped on introspect). `POST .../auth/refresh` rotates; reuse of the old token returns 401. `POST .../auth/logout` revokes.
 
 
+## [1.5.1] - 2026-09-18
+
+- Release v1.5.1.
+
+
 ## [Unreleased]
 
 
