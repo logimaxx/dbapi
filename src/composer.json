@@ -4,7 +4,7 @@
         "ext-json": "*",
         "ext-yaml": "*",
         "predis/predis": "^2.3",
-        "guzzlehttp/guzzle": "^7.9",
+        "guzzlehttp/guzzle": "^8.2",
         "ext-curl": "*",
         "opis/json-schema": "^2.0"
     },
