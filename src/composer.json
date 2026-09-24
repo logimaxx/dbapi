@@ -3,7 +3,7 @@
         "firebase/php-jwt": "^7.0",
         "ext-json": "*",
         "ext-yaml": "*",
-        "predis/predis": "^2.3",
+        "predis/predis": "^3.6",
         "guzzlehttp/guzzle": "^7.9",
         "ext-curl": "*",
         "opis/json-schema": "^2.0"
