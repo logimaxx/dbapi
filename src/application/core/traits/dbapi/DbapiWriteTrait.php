@@ -379,6 +379,13 @@ trait DbapiWriteTrait
             var_dump($exception->getTraceAsString());
             HttpResp::exception_out($exception);
         }
+        // Drop list filters/sort from the POST URL for the post-create readback.
+        // Otherwise e.g. POST ?filter=is_customer=1 with is_customer=0 inserts OK
+        // then 404s because the new row does not match the list filter.
+        $request->filter = [];
+        $request->filter_advanced = null;
+        $request->sort = [];
+
         $def = $this->apiDm->get_config($resourceName);
 
         $pk = $this->apiDm->get_primary_key($resourceName);
@@ -392,7 +399,7 @@ trait DbapiWriteTrait
                 ]);
             }
             if ($pk) {
-                $this->get_records($configName, $resourceName, $recId, null, false, true);
+                $this->get_records($configName, $resourceName, $recId, $request, false, true);
             } else {
                 $entry = $entries[0];
                 $attrs = isset($entry->attributes) ? (array) $entry->attributes : [];

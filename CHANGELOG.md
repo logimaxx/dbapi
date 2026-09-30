@@ -99,6 +99,11 @@ All notable changes to dbAPI are documented here. Version numbers follow [Semant
 - Release v1.5.1.
 
 
+## [1.5.2] - 2026-09-30
+
+- POST create returns the new row even when the request URL carries list filters or sort that the inserted row does not match. Previously the insert succeeded and the readback 404'd.
+
+
 ## [Unreleased]
 
 

@@ -4,7 +4,9 @@ Turn a MySQL or MariaDB schema into a [JSON:API](https://jsonapi.org/) REST laye
 
 Introspect → configure policies → **activate**. Filtering, relationships, field-level ACLs, JWT auth, generated OpenAPI. One install can host many independent APIs (`apiId` per database).
 
-**Current release:** `1.5.0` · **License:** Apache-2.0 · **Image:** [`ghcr.io/dbapiator/dbapi`](https://github.com/dbAPIator/dbapi/pkgs/container/dbapi)
+**Current release:** `1.5.2` · **License:** Apache-2.0 · **Image:** [`ghcr.io/dbapiator/dbapi`](https://github.com/dbAPIator/dbapi/pkgs/container/dbapi)
+
+**Note on history:** This project started years ago as a single-developer tool for personal use. Early commit messages are sparse; more recent history is clearer.
 
 ---
 
@@ -31,7 +33,7 @@ docker run -d --name dbapi -p 8888:80 \
   -e DB_USER=dbapi \
   -e DB_PASSWORD='secret' \
   -v dbapi-configs:/app/apis \
-  ghcr.io/dbapiator/dbapi:1.5.0
+  ghcr.io/dbapiator/dbapi:1.5.2
 ```
 
 Example response:
@@ -285,7 +287,7 @@ POST ...:activate                     → data plane live
 Same minimal `docker run` as in [Try it](#try-it). Full **`docker run`**, Compose stacks, environment variables, upgrades, and troubleshooting: **[Docker deployment guide](docs/docker_deployment.md)**.
 
 ```bash
-docker pull ghcr.io/dbapiator/dbapi:1.5.0
+docker pull ghcr.io/dbapiator/dbapi:1.5.2
 ```
 
 #### Local development (from source)
