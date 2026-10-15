@@ -104,6 +104,11 @@ All notable changes to dbAPI are documented here. Version numbers follow [Semant
 - POST create returns the new row even when the request URL carries list filters or sort that the inserted row does not match. Previously the insert succeeded and the readback 404'd.
 
 
+## [1.5.3] - 2026-10-15
+
+- Related-record DELETE returns the database error instead of 204 when the row is not removed.
+
+
 ## [Unreleased]
 
 
