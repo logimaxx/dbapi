@@ -944,7 +944,15 @@ class Records {
             throw new \Exception("Delete by ID not supported: resource '$tableName' has no primary key", 400);
         }
         $this->dbdrv->where($idFld, $recId)->delete($tableName);
-        return $this->dbdrv->affected_rows();
+        $err = $this->dbdrv->error();
+        if ($err["code"]) {
+            $errno = (int) $err["code"];
+            // 1451: parent row still referenced. Surface as 409 so clients do not treat it as success.
+            $status = ($errno === 1451 || $errno === 1217) ? 409 : $errno;
+            throw new \Exception($err["message"]." on delete record $tableName:$recId", $status);
+        }
+        $affected = $this->dbdrv->affected_rows();
+        return $affected > 0 ? $affected : 0;
     }
     /**
      * @param string $tableName
