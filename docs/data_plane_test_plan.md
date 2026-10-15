@@ -84,7 +84,7 @@ Shared scenarios live in `DataPlaneTestsTrait` (~55 tests):
 
 - POST → PATCH → DELETE
 - Bulk insert, bulk update by id array, bulk delete by filter
-- `onduplicate=ignore` and `onduplicate=update`
+- `onduplicate=ignore` and `onduplicate=update` (`field`, `field:add`, `field:sub`; reject non-numeric, unknown operator, primary key)
 - CSV import (`POST` `Content-Type: text/csv`): create, unknown column, bulk limit, onduplicate ignore, rollback on duplicate
 
 ### Export & procedures

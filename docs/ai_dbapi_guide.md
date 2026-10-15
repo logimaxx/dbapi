@@ -420,9 +420,12 @@ DELETE .../data/notes?filter[id><10;11;12]
 ```http
 POST .../data/products?onduplicate=ignore
 POST .../data/products?onduplicate=update&update=name,price
+POST .../data/products?onduplicate=update&update=price:add
 ```
 
 Values: `error` (default), `ignore`, `update`.
+
+On `update`, a bare field or `field:set` replaces the stored value. `field:add` and `field:sub` add or subtract the inserted number. Those operators are accepted only on updateable numeric columns (not the primary key, not text). The conflicting row is returned. Columns omitted from `update` stay as they are.
 
 ### Export
 

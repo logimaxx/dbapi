@@ -466,12 +466,12 @@ function create_param_onduplicate_update($resourceName,$resourceSpecifications) 
     return [
         "name"=>"update",
         "in"=>"query",
-        "description"=>"Comma separated list of fields to update when parameter **onduplicate=update**",
+        "description"=>"Comma separated list of fields to update when **onduplicate=update**. A field replaces the stored value. `field:add` and `field:sub` add or subtract the inserted value on numeric columns. `field:set` is the same as a bare field.",
         "required"=>false,
         "explode"=>false,
         "schema"=>[
             "type"=>"string",
-            "pattern"=>sprintf("^(%s)(,(%s))*$",$fieldsList,$fieldsList)
+            "pattern"=>sprintf("^(%s)(:(set|add|sub))?(,(%s)(:(set|add|sub))?)*$",$fieldsList,$fieldsList)
         ]
     ];
 

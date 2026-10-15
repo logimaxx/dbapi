@@ -109,6 +109,12 @@ All notable changes to dbAPI are documented here. Version numbers follow [Semant
 - Related-record DELETE returns the database error instead of 204 when the row is not removed.
 
 
+## [1.6.0] - 2026-10-15
+
+- `onduplicate=update` accepts `field:add` and `field:sub` so the inserted number is added to or subtracted from the stored column. A bare field or `field:set` still replaces the value. Arithmetic is limited to updateable numeric columns and is refused on the primary key. The conflicting row is returned.
+- Create failures that already carry an HTTP status are returned with that status. Duplicate-key errors stay 409.
+
+
 ## [Unreleased]
 
 

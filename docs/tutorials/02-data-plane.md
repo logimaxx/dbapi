@@ -146,7 +146,7 @@ curl -sS -X DELETE -G 'http://localhost:8888/v1/data/notes' \
   --data-urlencode 'filter[notes]=body~=~tutorial 2'
 ```
 
-`onduplicate` on POST: `error` (default), `ignore`, or `update` (with `update=col1,col2`).
+`onduplicate` on POST: `error` (default), `ignore`, or `update` (with `update=col1,col2`). `update=price:add` or `update=price:sub` adds or subtracts the inserted value on a numeric column; a bare name still replaces.
 
 POST to a relationship URL (e.g. `/v1/data/customers/1/notes`) infers the parent FK from the path.
 

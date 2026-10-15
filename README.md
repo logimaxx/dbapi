@@ -4,7 +4,7 @@ Turn a MySQL or MariaDB schema into a [JSON:API](https://jsonapi.org/) REST laye
 
 Introspect → configure policies → **activate**. Filtering, relationships, field-level ACLs, JWT auth, generated OpenAPI. One install can host many independent APIs (`apiId` per database).
 
-**Current release:** `1.5.3` · **License:** Apache-2.0 · **Image:** [`ghcr.io/dbapiator/dbapi`](https://github.com/dbAPIator/dbapi/pkgs/container/dbapi)
+**Current release:** `1.6.0` · **License:** Apache-2.0 · **Image:** [`ghcr.io/dbapiator/dbapi`](https://github.com/dbAPIator/dbapi/pkgs/container/dbapi)
 
 **Note on history:** This project started years ago as a single-developer tool for personal use. Early commit messages are sparse; more recent history is clearer.
 
@@ -33,7 +33,7 @@ docker run -d --name dbapi -p 8888:80 \
   -e DB_USER=dbapi \
   -e DB_PASSWORD='secret' \
   -v dbapi-configs:/app/apis \
-  ghcr.io/dbapiator/dbapi:1.5.3
+  ghcr.io/dbapiator/dbapi:1.6.0
 ```
 
 Example response:
@@ -212,7 +212,7 @@ POST /v1/apis/{apiId}/data/customers
 
 - **Create / update / delete** — single records or bulk operations where supported.
 - **Nested creates** — attach related records in one JSON:API payload (configurable recursion depth).
-- **Duplicate handling** — `onduplicate=error|ignore|update` with field lists for upsert-style flows.
+- **Duplicate handling** — `onduplicate=error|ignore|update` with field lists for upsert-style flows. `field:add` and `field:sub` combine the inserted number with the stored column.
 - **Filter-based updates and deletes** — bulk changes on matching rows (with guardrails).
 
 ### Security on every request
@@ -287,7 +287,7 @@ POST ...:activate                     → data plane live
 Same minimal `docker run` as in [Try it](#try-it). Full **`docker run`**, Compose stacks, environment variables, upgrades, and troubleshooting: **[Docker deployment guide](docs/docker_deployment.md)**.
 
 ```bash
-docker pull ghcr.io/dbapiator/dbapi:1.5.3
+docker pull ghcr.io/dbapiator/dbapi:1.6.0
 ```
 
 #### Local development (from source)

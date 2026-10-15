@@ -305,30 +305,48 @@ function getSort($str, $defaultTable)
 
 
 /**
+ * Fields to assign on ON DUPLICATE KEY UPDATE.
+ * `update=name,price:add` → replace name, add price. Missing operator means set.
+ *
  * @param $input
  * @param $defaultTableName
- * @return array
+ * @return array<string, list<array{name: string, op: string}>>
  */
 function getFieldsToUpdate($input, $defaultTableName)
 {
     $updateFields = [];
+    $raw = $input->get("update");
+    if (!is_string($raw) || trim($raw) === '') {
+        return $updateFields;
+    }
 
-    $fldsFromQuery = explode(",",$input->get("update"));
-    for($i=0;$i<count($fldsFromQuery);$i++) {
-        $tmp = explode(".", $fldsFromQuery[$i]);
-        if(count($tmp)==1) {
-            $tbl = $defaultTableName;
-            $fld = $tmp[0];
-        }
-        else
-            list($tbl,$fld) = [$tmp];
-
-        if(!$fld)
+    foreach (explode(",", $raw) as $token) {
+        $token = trim($token);
+        if ($token === '') {
             continue;
-
-        if(!isset($updateFields[$tbl]))
+        }
+        $op = "set";
+        $fieldToken = $token;
+        $colon = strrpos($token, ":");
+        if ($colon !== false) {
+            $op = trim(substr($token, $colon + 1));
+            $fieldToken = trim(substr($token, 0, $colon));
+        }
+        $parts = explode(".", $fieldToken);
+        if (count($parts) === 2) {
+            $tbl = $parts[0];
+            $fld = $parts[1];
+        } else {
+            $tbl = $defaultTableName;
+            $fld = $fieldToken;
+        }
+        if ($tbl === '' || $fld === '') {
+            continue;
+        }
+        if (!isset($updateFields[$tbl])) {
             $updateFields[$tbl] = [];
-        $updateFields[$tbl][] = $fld;
+        }
+        $updateFields[$tbl][] = ["name" => $fld, "op" => $op];
     }
     return $updateFields;
 }

@@ -146,7 +146,7 @@ function bulk_create_mixed_records()
             [
                 "name"=>"update",
                 "in"=>"query",
-                "description"=>"Comma separated list of fields to update when parameter onduplicate=update",
+                "description"=>"Comma separated list of fields to update when onduplicate=update. A field replaces the stored value. field:add and field:sub add or subtract the inserted value on numeric columns. field:set is the same as a bare field.",
                 "required"=>false,
                 "explode"=>false,
                 "schema"=>[

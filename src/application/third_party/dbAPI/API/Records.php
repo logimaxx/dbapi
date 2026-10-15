@@ -393,7 +393,7 @@ class Records {
      * @param object $data data to be inserted
      * @param $watchDog
      * @param string $onDuplicate behaviour flags
-     * @param String[] $fieldsToUpdate
+     * @param array<string, list<array{name: string, op: string}>> $fieldsToUpdate
      * @param $path
      * @param $includes
      * @return \Response
@@ -545,13 +545,7 @@ class Records {
                 if (empty($fieldsToUpdate[$table]))
                     break;
 
-                $updStr = [];
-                foreach ($fieldsToUpdate[$table] as $fld) {
-                    if (!$this->dm->field_is_updateable($table, $fld)) {
-                        throw new \Exception("ON DUPLICATE UPDATE failure: not allowed to update field '$fld'", 400);
-                    }
-                    $updStr[] = "`$fld`=VALUES(`$fld`)";
-                }
+                $updStr = $this->duplicateKeyUpdateAssignments($table, $fieldsToUpdate[$table], $insertData, $idFld);
 
                 if(count($updStr))
                     $insSql .= " ON DUPLICATE KEY UPDATE " . implode(",", $updStr);
@@ -1010,6 +1004,80 @@ class Records {
             return property_exists($obj,"attributes")?"ResourceObject":"ResourceIndicatorObject";
         else
             return property_exists($obj,"attributes")?"newResourceObject":"InvalidObject";
+    }
+
+    /**
+     * ON DUPLICATE KEY UPDATE assignments. Operators are a fixed set; values stay in the INSERT.
+     * The primary key is assigned to itself through LAST_INSERT_ID so the readback returns the conflicting row.
+     *
+     * @param list<array{name?: string, op?: string}> $specs
+     * @return list<string>
+     */
+    private function duplicateKeyUpdateAssignments($table, array $specs, array $insertData, $idFld)
+    {
+        $assignments = [];
+        $seen = [];
+        $pkAssigned = false;
+        foreach ($specs as $spec) {
+            $name = isset($spec["name"]) ? (string) $spec["name"] : "";
+            $op = isset($spec["op"]) && $spec["op"] !== "" ? (string) $spec["op"] : "set";
+            if (!in_array($op, ["set", "add", "sub"], true)) {
+                throw new \Exception("Invalid ON DUPLICATE update operator '$op'", 400);
+            }
+            $quoted = $this->quoteUpdateIdent($name);
+            if (isset($seen[$name])) {
+                throw new \Exception("ON DUPLICATE UPDATE failure: field '$name' is listed more than once", 400);
+            }
+            $seen[$name] = true;
+            if ($idFld && $name === $idFld && $op !== "set") {
+                throw new \Exception("ON DUPLICATE UPDATE failure: operator '$op' is not allowed on primary key '$name'", 400);
+            }
+            if (!$this->dm->field_is_updateable($table, $name)) {
+                throw new \Exception("ON DUPLICATE UPDATE failure: not allowed to update field '$name'", 400);
+            }
+            if (!array_key_exists($name, $insertData)) {
+                throw new \Exception("ON DUPLICATE UPDATE failure: field '$name' is not in the insert", 400);
+            }
+            if ($idFld && $name === $idFld) {
+                $assignments[] = "$quoted=LAST_INSERT_ID($quoted)";
+                $pkAssigned = true;
+                continue;
+            }
+            if ($op !== "set" && !$this->fieldSupportsArithmetic($table, $name)) {
+                throw new \Exception("ON DUPLICATE UPDATE failure: operator '$op' requires a numeric field '$name'", 400);
+            }
+            if ($op === "add") {
+                $assignments[] = "$quoted=$quoted+COALESCE(VALUES($quoted),0)";
+            } elseif ($op === "sub") {
+                $assignments[] = "$quoted=$quoted-COALESCE(VALUES($quoted),0)";
+            } else {
+                $assignments[] = "$quoted=VALUES($quoted)";
+            }
+        }
+        if ($idFld && !$pkAssigned && $this->isUpdateIdent($idFld)) {
+            array_unshift($assignments, $this->quoteUpdateIdent($idFld) . "=LAST_INSERT_ID(" . $this->quoteUpdateIdent($idFld) . ")");
+        }
+        return $assignments;
+    }
+
+    private function fieldSupportsArithmetic($table, $name)
+    {
+        $fields = $this->dm->get_fields($table);
+        $proto = $fields[$name]["type"]["proto"] ?? "";
+        return in_array($proto, ["int", "tinyint", "smallint", "mediumint", "bigint", "decimal", "float", "double", "real", "serial"], true);
+    }
+
+    private function isUpdateIdent($name)
+    {
+        return is_string($name) && preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name) === 1;
+    }
+
+    private function quoteUpdateIdent($name)
+    {
+        if (!$this->isUpdateIdent($name)) {
+            throw new \Exception("Invalid field name '$name'", 400);
+        }
+        return "`$name`";
     }
 
 }

@@ -357,12 +357,8 @@ trait DbapiWriteTrait
             catch (Exception $exception)
             {
                 $this->apiDb->trans_rollback();
-                $respHttpCode = 500;
-                switch ($exception->getCode()) {
-                    case 1062:
-                        $respHttpCode = 409;
-                        break;
-                }
+                $code = (int) $exception->getCode();
+                $respHttpCode = $code === 1062 ? 409 : HttpResp::exceptionHttpStatus($code);
                 HttpResp::json_out($respHttpCode, Document::from_exception($this->JsonApiDocOptions,$exception)->json_data());
             }
         }
