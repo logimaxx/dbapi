@@ -214,7 +214,8 @@ $config['directory_trigger'] = 'd';
 | your log files will fill up very fast.
 |
 */
-$config['log_threshold'] = 0;
+// 1 = errors only. MY_Log writes them to stderr (container logs), not application/logs.
+$config['log_threshold'] = 1;
 
 /*
 |--------------------------------------------------------------------------
