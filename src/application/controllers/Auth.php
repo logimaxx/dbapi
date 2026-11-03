@@ -366,6 +366,41 @@ class Auth extends CI_Controller {
     }
 
     /**
+     * Exchange a client token and secret for a short-lived access JWT.
+     * No refresh token: the secret is the long-lived credential.
+     *
+     * @param $configName
+     */
+    function client($configName) {
+        $auth = $this->load_auth_config($configName);
+        if (($auth['mode'] ?? 'none') === 'none' || empty($auth['jwt_key'])) {
+            HttpResp::bad_request(['error' => 'API clients require dbAuth with a JWT key']);
+        }
+
+        $token = trim((string) $this->input->post('token'));
+        $secret = (string) $this->input->post('secret');
+        $path = $this->configDir . '/' . $configName . '/' . \dbAPI\Auth\ApiClients::FILE;
+        $clients = is_file($path) ? include $path : [];
+        if (!is_array($clients)) {
+            $clients = [];
+        }
+        $row = \dbAPI\Auth\ApiClients::verify($clients, $token, $secret);
+        if ($row === null) {
+            HttpResp::json_out(401, ['errors' => [['message' => 'Authentication failed']]]);
+        }
+
+        $validity = (int) ($row['validity'] ?? \dbAPI\Auth\ApiClients::DEFAULT_VALIDITY);
+        $access = \dbAPI\Auth\ApiClients::accessClaims($token, $row);
+        $access['exp'] = time() + $validity;
+        $jwt = JWT::encode($access, $auth['jwt_key'], 'HS256');
+        HttpResp::json_out(200, [
+            'access_token' => $jwt,
+            'expires_in' => $validity,
+            'token_type' => 'Bearer',
+        ]);
+    }
+
+    /**
      * @param $configName
      */
     function login_methods($configName) {

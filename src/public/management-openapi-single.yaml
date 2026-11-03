@@ -255,6 +255,90 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ConnectionTestResult'
+  /mgmt/v1/clients:
+    get:
+      tags:
+      - Policies
+      operationId: listApiClients
+      summary: List API clients
+      description: Public token, claims, validity, and enabled. Secrets are never returned.
+      security:
+      - managementKey: []
+      - apiConfigKey: []
+      responses:
+        '200':
+          description: OK
+    post:
+      tags:
+      - Policies
+      operationId: createApiClient
+      summary: Create an API client
+      description: Returns the secret once. The data plane exchanges token and secret for a JWT at POST /v1/auth/client.
+      security:
+      - managementKey: []
+      - apiConfigKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiClientCreate'
+      responses:
+        '201':
+          description: Created. The secret is included once.
+  /mgmt/v1/clients/{token}:rotate:
+    parameters:
+    - name: token
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - Policies
+      operationId: rotateApiClientSecret
+      summary: Rotate an API client secret
+      security:
+      - managementKey: []
+      - apiConfigKey: []
+      responses:
+        '200':
+          description: New secret, returned once
+  /mgmt/v1/clients/{token}:
+    parameters:
+    - name: token
+      in: path
+      required: true
+      schema:
+        type: string
+    patch:
+      tags:
+      - Policies
+      operationId: updateApiClient
+      summary: Update claims, validity, or enabled
+      security:
+      - managementKey: []
+      - apiConfigKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiClientPatch'
+      responses:
+        '200':
+          description: Updated client, without the secret
+    delete:
+      tags:
+      - Policies
+      operationId: deleteApiClient
+      summary: Delete an API client
+      security:
+      - managementKey: []
+      - apiConfigKey: []
+      responses:
+        '200':
+          description: Deleted
   /mgmt/v1/schema:introspect:
     post:
       tags:
@@ -833,6 +917,41 @@ components:
                   type: string
             validity:
               type: integer
+    ApiClientClaims:
+      type: object
+      additionalProperties: true
+      description: Scalar JWT claims. client, username, unm, and login_method are set by the server.
+    ApiClientCreate:
+      type: object
+      additionalProperties: false
+      required:
+      - token
+      - claims
+      properties:
+        token:
+          type: string
+          minLength: 2
+          maxLength: 64
+          pattern: '^[A-Za-z0-9][A-Za-z0-9_-]*$'
+        claims:
+          $ref: '#/components/schemas/ApiClientClaims'
+        validity:
+          type: integer
+          minimum: 60
+          maximum: 86400
+          description: Access JWT lifetime in seconds. Default 900.
+    ApiClientPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        claims:
+          $ref: '#/components/schemas/ApiClientClaims'
+        validity:
+          type: integer
+          minimum: 60
+          maximum: 86400
+        enabled:
+          type: boolean
     ValidateResult:
       type: object
       properties:

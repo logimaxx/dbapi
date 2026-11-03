@@ -24,6 +24,7 @@ $route[$apiAuthUrlPrefix . '/login/(:any)']['post'] = "auth/login/{$singleApiId}
 $route[$apiAuthUrlPrefix . '/session']['get'] = "auth/session/{$singleApiId}";
 $route[$apiAuthUrlPrefix . '/refresh']['post'] = "auth/refresh/{$singleApiId}";
 $route[$apiAuthUrlPrefix . '/logout']['post'] = "auth/logout/{$singleApiId}";
+$route[$apiAuthUrlPrefix . '/client']['post'] = "auth/client/{$singleApiId}";
 $route[$apiAuthUrlPrefix . '/verify']['post'] = "auth/mfa_code_verify/{$singleApiId}";
 $route[$apiAuthUrlPrefix . '/apiclienttoken/(.*)/(\d+)']['get'] = "auth/genApiClientToken/{$singleApiId}/$1/$2";
 

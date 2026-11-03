@@ -444,6 +444,7 @@ Each API is stored under `configs_dir/{apiId}/` (see [`dbapiator.php`](../src/ap
 | `admin_config.php` | Per-API secret + config-network ACLs |
 | `data_api_acls.php` | Data API IP + path rules |
 | `authentication.php` | Data API auth (`mode`, `loginMethods` or legacy `loginQuery`, JWT key, …) |
+| `api_clients.php` | API clients (public token, secret hash, static JWT claims). Absent until the first client is created |
 
 Hooks are stored **inside** `structure.php` per entity (`hooks` key on each resource).
 
@@ -551,6 +552,21 @@ After activate, clients use:
 | POST | `/v1/apis/{apiId}/auth/refresh` | Rotate refresh token; body: `refresh_token=...` (`application/x-www-form-urlencoded`) |
 | POST | `/v1/apis/{apiId}/auth/logout` | Revoke a refresh token; body: `refresh_token=...`; always **204** |
 | GET | `/v1/apis/{apiId}/auth/session` | Validate Bearer access JWT; **204** if valid, **401** empty body if not |
+| POST | `/v1/apis/{apiId}/auth/client` (or `/v1/auth/client` in single-mode) | Exchange API client `token` and `secret` (form body) for an access JWT. No refresh token. Unknown token, wrong secret, and disabled clients all return **401** |
+
+### API clients
+
+Machine clients are not rows in the application database. They live in `api_clients.php` and are managed with the Management API (`X-Management-Key` or `X-Api-Config-Key`):
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/mgmt/v1/apis/{apiId}/clients` | List token, claims, validity, enabled. No secret |
+| POST | `/mgmt/v1/apis/{apiId}/clients` | Create. Body `{ "token", "claims", "validity"? }`. Response includes `secret` once |
+| PATCH | `/mgmt/v1/apis/{apiId}/clients/{token}` | Replace `claims`, set `validity`, or set `enabled` |
+| POST | `/mgmt/v1/apis/{apiId}/clients/{token}:rotate` | New secret, returned once |
+| DELETE | `/mgmt/v1/apis/{apiId}/clients/{token}` | Remove the client |
+
+Single-mode uses `/mgmt/v1/clients` with the same suffixes. `claims` are scalar JWT claims (`role`, `company_id`, …). The server sets `client` to the token and `login_method` to `client`. Access JWT lifetime defaults to 900 seconds (60–86400). Issuing a JWT requires auth mode `dbAuth` and a `jwt_key`. Path rules and `mandatoryFilter` apply to these claims the same way as to a user login.
 
 `POST .../auth/login` without `{loginMethod}` returns **404**. Unknown method → **404**; bad/missing fields → **400**; failed auth → **404**.
 

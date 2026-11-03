@@ -71,7 +71,7 @@ DBAPI_CONFIG_KEY=                               # X-Api-Config-Key per API
 | `policies/auth.mode` | Behavior                                                         |
 | -------------------- | ---------------------------------------------------------------- |
 | `none`               | No JWT; guest read may be allowed (also depends on IP/path ACLs) |
-| `dbAuth`             | One or more named login methods (SQL) → JWT Bearer               |
+| `dbAuth`             | Named login methods (SQL) → JWT Bearer. API clients (token + secret) also receive that JWT |
 
 
 Auth URLs (multi-API): `{base}/v1/apis/{apiId}/auth/...` — single-mode: `{base}/v1/auth/...`. Legacy `{base}/apis/{apiId}/auth/...` still works; prefer `/v1/` in new code.
@@ -154,6 +154,19 @@ Success: same token JSON as login (new pair). The previous refresh token is inva
 **Logout (revoke refresh):** `POST .../auth/logout` with `refresh_token=...` → **204**.
 
 Refresh tokens are opaque (not JWTs) and stored hashed in `dbapi_refresh_tokens`. Do not send the refresh token as `Authorization: Bearer`.
+
+### API clients (token + secret)
+
+A machine client is not a SQL login. Create it on the Management API (`POST /mgmt/v1/apis/{apiId}/clients`, or `/mgmt/v1/clients` in single-mode). The response includes `secret` once. Then:
+
+```http
+POST {base}/v1/apis/{apiId}/auth/client
+Content-Type: application/x-www-form-urlencoded
+
+token=CLIENT_TOKEN&secret=CLIENT_SECRET
+```
+
+Single-mode: `POST {base}/v1/auth/client`. The response is an access JWT (`access_token`, `expires_in`, `token_type`) and no refresh token. Send it as `Authorization: Bearer` on data routes. Claims configured on the client (`role`, `company_id`, …) are in the JWT, plus `client` (the token) and `login_method` = `client`. Wrong secret, unknown token, and a disabled client all return **401**. Requires auth mode `dbAuth`.
 
 ### Authenticated requests
 

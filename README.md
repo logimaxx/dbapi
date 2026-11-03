@@ -4,7 +4,7 @@ Turn a MySQL or MariaDB schema into a [JSON:API](https://jsonapi.org/) REST laye
 
 Introspect → configure policies → **activate**. Filtering, relationships, field-level ACLs, JWT auth, generated OpenAPI. One install can host many independent APIs (`apiId` per database).
 
-**Current release:** `1.6.0` · **License:** Apache-2.0 · **Image:** [`ghcr.io/dbapiator/dbapi`](https://github.com/dbAPIator/dbapi/pkgs/container/dbapi)
+**Current release:** `1.7.0` · **License:** Apache-2.0 · **Image:** [`ghcr.io/dbapiator/dbapi`](https://github.com/dbAPIator/dbapi/pkgs/container/dbapi)
 
 **Note on history:** This project started years ago as a single-developer tool for personal use. Early commit messages are sparse; more recent history is clearer.
 
@@ -33,7 +33,7 @@ docker run -d --name dbapi -p 8888:80 \
   -e DB_USER=dbapi \
   -e DB_PASSWORD='secret' \
   -v dbapi-configs:/app/apis \
-  ghcr.io/dbapiator/dbapi:1.6.0
+  ghcr.io/dbapiator/dbapi:1.7.0
 ```
 
 Example response:
@@ -219,7 +219,7 @@ POST /v1/apis/{apiId}/data/customers
 
 - **IP ACLs** for data endpoints (and separate rules for management/config traffic).
 - **Path-based authorization** — restrict which URLs and HTTP methods callers may use.
-- **JWT authentication** — issue tokens after a configurable SQL login query against the same database; optional guest/read modes; optional rotating **refresh tokens** (`POST .../auth/refresh`, `POST .../auth/logout`).
+- **JWT authentication** — issue tokens after a configurable SQL login query against the same database; optional guest/read modes; optional rotating **refresh tokens** (`POST .../auth/refresh`, `POST .../auth/logout`). API clients (token + secret) exchange for the same access JWT at `POST .../auth/client`.
 - **Per-table and per-field ACLs** — control read, insert, update, delete, sort, and search per column.
 - **Inactive APIs return 409** — configuration can continue while data traffic is blocked.
 - **Liveness** — unauthenticated `GET /health` for orchestrators (Docker `HEALTHCHECK` uses it).
@@ -287,7 +287,7 @@ POST ...:activate                     → data plane live
 Same minimal `docker run` as in [Try it](#try-it). Full **`docker run`**, Compose stacks, environment variables, upgrades, and troubleshooting: **[Docker deployment guide](docs/docker_deployment.md)**.
 
 ```bash
-docker pull ghcr.io/dbapiator/dbapi:1.6.0
+docker pull ghcr.io/dbapiator/dbapi:1.7.0
 ```
 
 #### Local development (from source)

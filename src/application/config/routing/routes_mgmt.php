@@ -36,6 +36,12 @@ $route[$mgmtApi . '/policies/data-network']['put'] = 'mgmt/policies/data/update/
 $route[$mgmtApi . '/policies/auth']['get'] = 'mgmt/policies/auth/get/$1';
 $route[$mgmtApi . '/policies/auth']['put'] = 'mgmt/policies/auth/update/$1';
 
+$route[$mgmtApi . '/clients/(:any):rotate']['post'] = 'mgmt/clients/rotate/$1/$2';
+$route[$mgmtApi . '/clients']['get'] = 'mgmt/clients/index/$1';
+$route[$mgmtApi . '/clients']['post'] = 'mgmt/clients/create/$1';
+$route[$mgmtApi . '/clients/(:any)']['patch'] = 'mgmt/clients/update/$1/$2';
+$route[$mgmtApi . '/clients/(:any)']['delete'] = 'mgmt/clients/remove/$1/$2';
+
 // Schema
 $route[$mgmtApi . '/schema:introspect']['post'] = 'mgmt/schema/introspect/$1';
 $route[$mgmtApi . '/schema:sync']['post'] = 'mgmt/schema/sync/$1';

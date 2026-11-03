@@ -10,6 +10,7 @@
             <file>tests/TestApiSafety.php</file>
             <file>tests/TestDataplaneSchemaSync.php</file>
             <file>tests/TestAccessControl.php</file>
+            <file>tests/TestApiClients.php</file>
             <file>tests/TestSelectOffset.php</file>
             <file>tests/TestCsvImportHelper.php</file>
         </testsuite>
@@ -30,6 +31,7 @@
             <file>tests/TestApiSafety.php</file>
             <file>tests/TestDataplaneSchemaSync.php</file>
             <file>tests/TestAccessControl.php</file>
+            <file>tests/TestApiClients.php</file>
             <file>tests/TestSelectOffset.php</file>
             <file>tests/TestCsvImportHelper.php</file>
             <file>tests/TestHealth.php</file>
