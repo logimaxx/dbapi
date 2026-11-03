@@ -115,6 +115,11 @@ All notable changes to dbAPI are documented here. Version numbers follow [Semant
 - Create failures that already carry an HTTP status are returned with that status. Duplicate-key errors stay 409.
 
 
+## [1.7.0] - 2026-11-03
+
+- API clients exchange a public token and a hashed secret for the same access JWT as user login. No refresh token. Requires dbAuth.
+
+
 ## [Unreleased]
 
 
